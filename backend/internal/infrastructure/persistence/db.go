@@ -11,6 +11,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 
 	// We use the mattn/go-sqlite3 driver, which requires CGO.
 	// The underscore import is a Go idiom: we import it for its
@@ -88,31 +90,99 @@ func executePragma(db *sql.DB, pragma string) error {
 }
 
 // RunMigrations reads and executes SQL migration files from the given
-// directory. Migrations run in alphabetical order (001_init.sql first).
+// directory. Migrations run in alphabetical order (001_init.sql first,
+// then 002_*.sql, etc.).
+//
+// Tracking: A schema_migrations table records which migrations have been
+// applied. Each migration that executes successfully gets its filename
+// recorded. On subsequent runs, already-applied migrations are skipped.
+// This prevents errors from non-idempotent statements like
+// ALTER TABLE ADD COLUMN on the second startup.
 //
 // WHY simple file-based migrations: For a 3-day test, we don't need
-// a migration framework like golang-migrate or goose. Just read the
-// SQL file and execute it. This keeps the dependency count low.
-//
-// IMPORTANT: This is NOT a production-grade migration system.
-// It doesn't track which migrations have run, and it uses
-// "CREATE TABLE IF NOT EXISTS" for idempotency. Good enough for now.
+// a migration framework like golang-migrate or goose. File-based +
+// tracking table is explicit, debuggable, and dependency-free.
 func RunMigrations(db *sql.DB, migrationsDir string) error {
-	// Read the initial migration file.
-	// We could make this more sophisticated (walk the directory, order by name),
-	// but for now there's only one migration file.
-	migrationFile := migrationsDir + "/001_init.sql"
-	sqlBytes, err := os.ReadFile(migrationFile)
-	if err != nil {
-		return fmt.Errorf("failed to read migration file %s: %w", migrationFile, err)
+	// Ensure the tracking table exists before we check or record anything.
+	if err := ensureMigrationsTable(db); err != nil {
+		return fmt.Errorf("failed to create schema_migrations table: %w", err)
 	}
 
-	// Execute the entire SQL file as one statement.
-	// SQLite's driver supports multiple statements in one Exec call.
-	_, err = db.Exec(string(sqlBytes))
+	entries, err := os.ReadDir(migrationsDir)
 	if err != nil {
-		return fmt.Errorf("failed to execute migration: %w", err)
+		return fmt.Errorf("failed to read migrations directory %s: %w", migrationsDir, err)
+	}
+
+	// Collect .sql files and run them in alphabetical (filename) order.
+	var files []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if filepath.Ext(name) != ".sql" {
+			continue
+		}
+		files = append(files, name)
+	}
+	sort.Strings(files)
+
+	for _, name := range files {
+		// Check if this migration was already applied.
+		var count int
+		row := db.QueryRow("SELECT COUNT(1) FROM schema_migrations WHERE version = $1", name)
+		if err := row.Scan(&count); err != nil {
+			return fmt.Errorf("failed to check migration status for %s: %w", name, err)
+		}
+		if count > 0 {
+			// Already applied — skip silently.
+			continue
+		}
+
+		path := filepath.Join(migrationsDir, name)
+		sqlBytes, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read migration file %s: %w", path, err)
+		}
+
+		// Run the migration inside a transaction so we can record it
+		// atomically. If the SQL fails, the transaction rolls back and
+		// the version is NOT recorded — the next startup will retry it.
+		tx, err := db.Begin()
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction for migration %s: %w", name, err)
+		}
+
+		if _, err := tx.Exec(string(sqlBytes)); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to execute migration %s: %w", name, err)
+		}
+
+		if _, err := tx.Exec(
+			"INSERT INTO schema_migrations (version, applied_at) VALUES ($1, datetime('now'))",
+			name,
+		); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to record migration %s: %w", name, err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("failed to commit migration %s: %w", name, err)
+		}
 	}
 
 	return nil
+}
+
+// ensureMigrationsTable creates the schema_migrations tracking table
+// if it does not already exist. This is called before any migration
+// checks or execution.
+func ensureMigrationsTable(db *sql.DB) error {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			version   TEXT PRIMARY KEY,
+			applied_at TEXT NOT NULL
+		)
+	`)
+	return err
 }

@@ -1,0 +1,25 @@
+# Backend
+backend/fleet.db
+backend/*.db
+backend/.env
+
+# Frontend
+frontend-web/node_modules/
+frontend-web/dist/
+frontend-web/.env
+frontend-web/.env.local
+frontend-web/.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Engram
+.engram/
