@@ -169,7 +169,7 @@ data, err := fs.sensorRepo.FindByVehicleID(ctx, vehicleID, from, to, "fuel", rea
 
 ---
 
-## Analogía para el Video
+## Analogía
 
 > "Es como calcular el rendimiento de tu auto. Si en la última semana gastaste 35 litros en 500 kilómetros, tu rendimiento es 14 km/l. Si te quedan 20 litros en el tanque, podés recorrer 280 km más. Si la próxima estación de servicio está a 300 km, el sistema te alerta ANTES de que te quedes sin nafta en medio de la ruta."
 

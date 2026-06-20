@@ -188,8 +188,6 @@ curl http://localhost:8080/api/v1/alerts \
 }
 ```
 
-**Para el video:** "Con 4 litros y un consumo de 5 litros por hora, este camión se queda sin nafta en 48 minutos. El sistema generó una alerta crítica."
-
 ---
 
 ## Demo 5: WebSocket en Tiempo Real
@@ -239,12 +237,6 @@ cd /home/francisco/Documents/prueba-tecnica/backend
 go test ./... -v
 ```
 
-**Para el video:** Mostrá la salida completa. Destacá:
-- "Todos los tests pasan"
-- "Tests de JWT: generación, validación, expiración, tampering"
-- "Tests de combustible: cálculo predictivo con múltiples escenarios"
-- "Tests de integración: HTTP handlers con servidor real y SQLite en memoria"
-
 **Bonus:** Mostrá coverage:
 ```bash
 go test ./... -cover
@@ -267,8 +259,6 @@ Iteration 2/5: Sent 3 sensor points → 201 Created
 ...
 ```
 
-**Para el video:** "Este script simula un dispositivo IoT real enviando datos automáticamente. Es útil para testing y demos."
-
 ---
 
 ## Troubleshooting Rápido
@@ -281,17 +271,3 @@ Iteration 2/5: Sent 3 sensor points → 201 Created
 | `401 Unauthorized` | Token expirado (15 min) o inválido. Hacé login de nuevo |
 | `403 Forbidden` | El endpoint requiere rol admin y tu token es de user |
 
----
-
-## Checklist Pre-Grabación
-
-- [ ] Terminal 1: Server corriendo (`go run ./cmd/api`)
-- [ ] Terminal 2: Lista para curls
-- [ ] Postman/curl con requests guardados (opcional)
-- [ ] Navegador con extensión WebSocket lista
-- [ ] JWT_SECRET exportado
-- [ ] Base de datos seedeada
-- [ ] `go test ./...` corrió y pasó (mostrar en video)
-- [ ] Fuente de terminal aumentada a 16px+
-- [ ] Notificaciones silenciadas
-- [ ] Cronómetro visible

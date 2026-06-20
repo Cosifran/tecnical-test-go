@@ -92,21 +92,9 @@ import "github.com/francisco/fleet-monitor/internal/domain" // Esto sí
 
 ---
 
-## Analogía para el Video
+## Analogía
 
 > "Imaginen un restaurante. El `domain` es el menú: define qué platos existen y qué ingredientes llevan. El `application` es el chef: sabe CÓMO cocinar cada plato siguiendo las recetas. El `infrastructure` es la cocina: los hornos, las ollas, los cuchillos. El chef no le dice al horno cómo calentar — solo le pasa la temperatura. Y el menú no sabe ni que existe un horno."
-
----
-
-## Preguntas que te pueden hacer
-
-**Q: "¿Por qué no pusiste todo junto en un solo package?"**
-A: "Porque mezclar lógica de negocio con detalles técnicos genera código acoplado. Si cambio la base de datos, no quiero tocar el cálculo de combustible. Clean Architecture aísla esos cambios."
-
-**Q: "¿No es overkill para una prueba de 3 días?"**
-A: "No, porque justamente en 3 días necesitás moverte rápido. Si tengo todo desacoplado, puedo testear cada parte por separado sin prender el servidor. Eso me ahorró horas de debugging."
-
----
 
 ## Archivos Clave para Revisar
 

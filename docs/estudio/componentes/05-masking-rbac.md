@@ -125,21 +125,9 @@ El endpoint `/api/v1/alerts` ya está protegido con `RBACMiddleware("admin")`. S
 
 ---
 
-## Analogía para el Video
+## Analogía
 
 > "Es como mostrar una cuenta bancaria. El administrador del banco ve el número completo de cuenta: 1234-5678-9012-3456. El usuario normal solo ve los últimos 4 dígitos: ****-****-****-3456. Ambos pueden identificar la cuenta, pero solo el administrador tiene acceso completo."
-
----
-
-## Preguntas que te pueden hacer
-
-**Q: "¿Por qué no hashear el ID en vez de mascararlo?"**
-A: "El hash es irreversible. Si un admin necesita ver el ID real para debugging o soporte, no podría. El masking preserva los últimos 4 caracteres como identificador visual único, pero oculta la parte sensible."
-
-**Q: "¿Qué pasa si un usuario adivina el ID completo viendo los últimos 4 caracteres?"**
-A: "Los últimos 4 caracteres reducen el espacio de búsqueda, pero no lo hacen trivial. Un atacante tendría que adivinar los primeros N-4 caracteres. Para seguridad adicional, los device_ids deberían ser aleatorios y largos, no secuenciales."
-
----
 
 ## Archivos para Revisar
 

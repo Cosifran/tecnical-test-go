@@ -1,6 +1,6 @@
 # Índice de Estudio — Backend IoT Fleet Monitor
 
-> Material de preparación para explicar el backend en el video de 5 minutos.
+> Material de preparación
 
 ---
 
@@ -30,14 +30,6 @@
 
 ### Demo
 - **[Comandos y Demo](componentes/07-demo-comandos.md)** — Todos los curls, WebSocket, simulador, troubleshooting
-
----
-
-## Guion para el Video
-
-- **[Guion Completo 5 Minutos](video-guion/00-guion-completo-5-minutos.md)** — Segmento por segmento, qué decir, qué mostrar, tips
-
----
 
 ## Orden Recomendado de Estudio
 
@@ -70,17 +62,3 @@ Día 3 (1 hora):
 6. *"108 tests automatizados, desde unitarios con mocks hasta integración con SQLite en memoria."*
 
 ---
-
-## Checklist Final
-
-Antes de grabar el video, verificá:
-
-- [ ] Leíste todas las fichas de componentes
-- [ ] Entendés las 3 fórmulas del cálculo de combustible
-- [ ] Sabés explicar por qué `hmac.Equal` y no `bytes.Equal`
-- [ ] Practicaste los comandos de demo al menos una vez
-- [ ] Ensayaste el guion completo en voz alta (cronometrado)
-- [ ] El servidor levanta y responde a requests
-- [ ] Los tests pasan (`go test ./...`)
-- [ ] Tenés los curls copiados y listos para pegar
-- [ ] La fuente de la terminal está en 16px+

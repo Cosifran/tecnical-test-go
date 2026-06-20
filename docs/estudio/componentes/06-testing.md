@@ -4,7 +4,6 @@
 
 > "Si no está testeado, no funciona."
 
-En esta prueba técnica, los tests pesan **10% de la evaluación** explícitamente, pero impactan mucho más:
 - Demuestran que el código es confiable
 - Permiten refactorizar sin miedo
 - Documentan el comportamiento esperado
@@ -215,24 +214,9 @@ go tool cover -html=coverage.out
 
 ---
 
-## Analogía para el Video
+## Analogía
 
 > "Los tests son como los cinturones de seguridad de un auto. No los usás porque esperes chocar, los usás porque SI chocás, querés salir ileso. En código, los tests te permiten cambiar cosas — refactorizar, agregar features, optimizar — sin miedo a romper lo que ya funciona."
-
----
-
-## Preguntas que te pueden hacer
-
-**Q: "¿Cuál es el coverage de tu proyecto?"**
-A: "Corré `go test ./... -cover` y mostrá el número. Si es >70%, está bien. Si es >80%, excelente."
-
-**Q: "¿Por qué no usas testify/assert?"**
-A: "Usamos testing estándar de Go. Es más verboso pero cero dependencias. Para una prueba técnica, demostrar que sabés usar el testing nativo es un plus."
-
-**Q: "¿Cómo testeás el cálculo de combustible sin datos reales de sensores?"**
-A: "Con mocks. Creo un mockSensorRepo que retorna lecturas predefinidas: [24L, 19L, 14L, 9L, 4L]. El FuelService calcula con esos datos. No necesito una base de datos, un sensor real, ni siquiera el servidor levantado."
-
----
 
 ## Archivos para Revisar
 

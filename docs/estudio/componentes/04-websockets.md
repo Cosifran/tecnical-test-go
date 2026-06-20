@@ -181,24 +181,9 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request, tokenService *jwt
 
 ---
 
-## Analogía para el Video
+## Analogía
 
 > "Imaginen una radio FM. El Hub es la emisora. Cada cliente es un radio en una casa. Cuando el locutor habla (sensor envía datos), la emisora transmite a TODOS los radios al mismo tiempo. Si un radio está roto o muy lejos, la emisora no deja de transmitir — simplemente deja de enviarle señal a ese radio en particular."
-
----
-
-## Preguntas que te pueden hacer
-
-**Q: "¿Por qué no usan SSE (Server-Sent Events) en vez de WebSockets?"**
-A: "SSE es más simple para unidireccional (servidor → cliente), pero WebSockets permiten bidireccional. En el futuro podríamos querer que el dashboard envíe comandos al servidor (ej. 'solicitar ubicación actual'). WebSocket nos da esa flexibilidad."
-
-**Q: "¿Qué pasa si se cae el Hub?"**
-A: "El Hub corre como goroutine en el mismo proceso que el servidor HTTP. Si el proceso muere, todo se cae. Para producción a escala, se podría extraer el Hub a un servicio separado con Redis Pub/Sub para distribuir entre múltiples instancias."
-
-**Q: "¿Cómo escala esto a 10.000 clientes?"**
-A: "Go maneja goroutines muy eficientemente — 10.000 goroutines consumen pocos MB de memoria. El cuello de botella sería el broadcast: iterar 10.000 clients en un loop. Para escalar más, se podría particionar en múltiples Hubs o usar un message broker como Redis Streams."
-
----
 
 ## Archivos para Revisar
 
