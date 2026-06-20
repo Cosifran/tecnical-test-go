@@ -1,0 +1,474 @@
+{
+  "info": {
+    "_postman_id": "fleet-monitor-api",
+    "name": "Fleet Monitor API",
+    "description": "Coleccion completa para probar la API REST y WebSockets del sistema de monitoreo IoT para flotas vehiculares.\n\n**Credenciales de prueba:**\n- Admin: `admin@example.com` / `admin123`\n- User: `user@example.com` / `user123`\n\n**Instrucciones:**\n1. Levantar el backend: `go run ./cmd/api -seed` (la primera vez para crear datos)\n2. Luego: `go run ./cmd/api`\n3. Ejecutar `Auth > Login` primero (guarda el token automaticamente)\n4. Probar los demas endpoints (usaran el token automaticamente)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoints de autenticacion. El login devuelve access_token y refresh_token. El test script guarda el access_token en la variable de coleccion `accessToken` para usarlo en los demas requests.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Autentica un usuario y devuelve tokens JWT.\n\n**Request:**\n- `email`: string\n- `password`: string\n\n**Response (200):**\n```json\n{\n  \"access_token\": \"eyJ...\",\n  \"refresh_token\": \"eyJ...\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 900\n}\n```\n\n**Errores:**\n- 400: validation_error\n- 401: unauthorized (credenciales invalidas)\n- 500: internal_error"
+          },
+          "response": [
+            {
+              "name": "Login exitoso (admin)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2MjQyNjIyLCJ0eXBlIjoiYWNjZXNzIn0.test\",\n  \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2ODMxNDIyLCJ0eXBlIjoicmVmcmVzaCJ9.test\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 900\n}"
+            },
+            {
+              "name": "Credenciales invalidas",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"wrong@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "auth", "login"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"error\": \"unauthorized\",\n  \"message\": \"invalid email or password\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login como user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login con rol 'user' (no admin). Usa este para probar el enmascaramiento de IDs y el acceso denegado a alertas."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            },
+            "description": "Renueva el access_token usando el refresh_token.\n\n**Request:**\n- `refresh_token`: string\n\n**Response (200):** Mismo shape que login.\n\n**Errores:**\n- 400: validation_error\n- 401: token_expired | invalid_token | unauthorized"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.access_token);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.refresh_token);",
+                  "    console.log('Tokens actualizados');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set('accessToken', jsonData.access_token);",
+              "    pm.collectionVariables.set('refreshToken', jsonData.refresh_token);",
+              "    console.log('Login exitoso - tokens guardados');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "description": "Endpoints de vehiculos. Requieren autenticacion Bearer. El enmascaramiento de DeviceID (DEV-****-ABCD) se aplica para usuarios no-admin.",
+      "item": [
+        {
+          "name": "List Vehicles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles"]
+            },
+            "description": "Lista todos los vehiculos.\n\n**Response (200):**\n```json\n{\n  \"vehicles\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"device_id\": \"DEV-11111111-AAAA\",\n      \"name\": \"Truck 01\",\n      \"created_at\": \"2024-01-01T00:00:00Z\"\n    }\n  ]\n}\n```\n\n**Nota:** Para usuarios `user` (no admin), el `device_id` aparece enmascarado: `DEV-****-AAAA`."
+          },
+          "response": [
+            {
+              "name": "Respuesta admin (IDs completos)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/vehicles",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "vehicles"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"vehicles\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"device_id\": \"DEV-11111111-AAAA\",\n      \"name\": \"Truck 01\",\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    },\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"device_id\": \"DEV-22222222-BBBB\",\n      \"name\": \"Truck 02\",\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    },\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"device_id\": \"DEV-33333333-CCCC\",\n      \"name\": \"Truck 03\",\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Respuesta user (IDs enmascarados)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/vehicles",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "vehicles"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"vehicles\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"device_id\": \"DEV-****-AAAA\",\n      \"name\": \"Truck 01\",\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    },\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"device_id\": \"DEV-****-BBBB\",\n      \"name\": \"Truck 02\",\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    },\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"device_id\": \"DEV-****-CCCC\",\n      \"name\": \"Truck 03\",\n      \"created_at\": \"2024-01-15T10:30:00Z\"\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.vehicles && jsonData.vehicles.length > 0) {",
+                  "    pm.collectionVariables.set('vehicleId', jsonData.vehicles[0].id);",
+                  "    console.log('Vehicle ID guardado: ' + jsonData.vehicles[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vehicle History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}/history?from=2024-01-01T00:00:00Z&to=2024-12-31T23:59:59Z&type=fuel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "{{vehicleId}}", "history"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2024-01-01T00:00:00Z",
+                  "description": "Inicio del rango (RFC3339, opcional)"
+                },
+                {
+                  "key": "to",
+                  "value": "2024-12-31T23:59:59Z",
+                  "description": "Fin del rango (RFC3339, opcional)"
+                },
+                {
+                  "key": "type",
+                  "value": "fuel",
+                  "description": "Tipo de sensor: gps, fuel, temperature (opcional)"
+                }
+              ]
+            },
+            "description": "Obtiene el historial de sensores de un vehiculo especifico.\n\n**Query params:**\n- `from`: RFC3339 timestamp (opcional)\n- `to`: RFC3339 timestamp (opcional)\n- `type`: filtro por tipo de sensor - `gps`, `fuel`, `temperature` (opcional)\n\n**Response (200):**\n```json\n{\n  \"vehicle\": {\n    \"id\": \"...\",\n    \"device_id\": \"...\",\n    \"name\": \"...\"\n  },\n  \"history\": [\n    {\n      \"id\": \"...\",\n      \"vehicle_id\": \"...\",\n      \"type\": \"fuel\",\n      \"value\": {\"level\": 45.5, \"unit\": \"liters\"},\n      \"timestamp\": \"2024-01-15T10:30:00Z\",\n      \"created_at\": \"2024-01-15T10:30:05Z\"\n    }\n  ]\n}\n```\n\n**Errores:**\n- 400: validation_error (timestamps invalidos)\n- 404: not_found (vehiculo no existe)\n- 500: internal_error"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sensors",
+      "description": "Ingesta de datos de sensores. **Solo administradores.** El broadcast a WebSockets ocurre automaticamente despues de la insercion.",
+      "item": [
+        {
+          "name": "Ingest Sensor Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"device_id\": \"DEV-11111111-AAAA\",\n    \"timestamp\": \"2024-01-15T10:30:00Z\",\n    \"type\": \"gps\",\n    \"value\": {\n      \"lat\": 4.6097,\n      \"lng\": -74.0817\n    }\n  },\n  {\n    \"device_id\": \"DEV-11111111-AAAA\",\n    \"timestamp\": \"2024-01-15T10:30:00Z\",\n    \"type\": \"fuel\",\n    \"value\": {\n      \"level\": 45.5,\n      \"unit\": \"liters\"\n    }\n  },\n  {\n    \"device_id\": \"DEV-11111111-AAAA\",\n    \"timestamp\": \"2024-01-15T10:30:00Z\",\n    \"type\": \"temperature\",\n    \"value\": {\n      \"celsius\": 28.5\n    }\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sensors/data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sensors", "data"]
+            },
+            "description": "Ingesta un batch de lecturas de sensores. **Maximo 100 items.**\n\n**Request body (array):**\n```json\n[\n  {\n    \"device_id\": \"DEV-11111111-AAAA\",\n    \"timestamp\": \"2024-01-15T10:30:00Z\",\n    \"type\": \"gps\",\n    \"value\": {\"lat\": 4.6097, \"lng\": -74.0817}\n  }\n]\n```\n\n**Tipos de sensor y value shapes:**\n- `gps`: `{lat: number, lng: number}`\n- `fuel`: `{level: number, unit: \"liters\"}`\n- `temperature`: `{celsius: number}`\n\n**Response (201):**\n```json\n{\n  \"inserted\": 3\n}\n```\n\n**Errores:**\n- 400: validation_error (batch vacio, >100 items, datos invalidos)\n- 403: forbidden (solo admin)\n- 500: internal_error\n\n**Nota:** Tras la insercion exitosa, se broadcastea automaticamente por WebSocket a todos los clientes conectados."
+          },
+          "response": [
+            {
+              "name": "Ingest exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                  {"key": "Content-Type", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[\n  {\n    \"device_id\": \"DEV-11111111-AAAA\",\n    \"timestamp\": \"2024-01-15T10:30:00Z\",\n    \"type\": \"gps\",\n    \"value\": {\"lat\": 4.6097, \"lng\": -74.0817}\n  }\n]"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sensors/data",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "sensors", "data"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"inserted\": 1\n}"
+            },
+            {
+              "name": "Batch vacio",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                  {"key": "Content-Type", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[]"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sensors/data",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "sensors", "data"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"error\": \"validation_error\",\n  \"message\": \"batch cannot be empty\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "description": "Alertas predictivas del sistema. **Solo administradores.** Las alertas se generan automaticamente cuando el combustible baja a menos de 1 hora de autonomia.",
+      "item": [
+        {
+          "name": "List Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "alerts"]
+            },
+            "description": "Lista todas las alertas predictivas, ordenadas por fecha descendente (mas recientes primero).\n\n**Response (200):**\n```json\n{\n  \"alerts\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"vehicle_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"type\": \"low_fuel\",\n      \"severity\": \"critical\",\n      \"details\": {\n        \"autonomy_minutes\": 45,\n        \"current_level_liters\": 5.2,\n        \"consumption_rate_lph\": 6.9\n      },\n      \"created_at\": \"2024-01-15T14:30:00Z\"\n    }\n  ]\n}\n```\n\n**Errores:**\n- 403: forbidden (solo admin)\n- 500: internal_error\n\n**Nota:** Si no hay alertas, devuelve `{\"alerts\": []}` (no null)."
+          },
+          "response": [
+            {
+              "name": "Lista con alertas",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/alerts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "alerts"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"alerts\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"vehicle_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"type\": \"low_fuel\",\n      \"severity\": \"critical\",\n      \"details\": {\n        \"autonomy_minutes\": 45,\n        \"current_level_liters\": 5.2,\n        \"consumption_rate_lph\": 6.9\n      },\n      \"created_at\": \"2024-01-15T14:30:00Z\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Sin alertas",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/alerts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "alerts"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"alerts\": []\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "WebSocket",
+      "description": "Endpoint de WebSocket para actualizaciones en tiempo real.\n\n**Conexion:**\n```\nws://{{baseUrl}}/api/v1/ws?token={{accessToken}}\n```\n\n**Nota:** El token se pasa como query parameter porque los headers no estan disponibles durante el handshake WebSocket.\n\n**Mensajes del servidor:**\n- `sensor_update`: Se envia tras cada ingesta exitosa de sensores\n  ```json\n  {\"type\": \"sensor_update\", \"vehicle_id\": \"...\"}\n  ```\n- `low_fuel`: Se envia cuando se genera una alerta de combustible bajo\n  ```json\n  {\"type\": \"low_fuel\", \"vehicle_id\": \"...\"}\n  ```\n\n**Ping/Pong:** El servidor envia un ping cada 54 segundos. El navegador responde automaticamente. Si no hay respuesta en 60 segundos, el servidor cierra la conexion.\n\n**Para probar en Postman:**\n1. Ve a la pestana 'WebSocket' (no 'HTTP')\n2. URL: `ws://localhost:8080/api/v1/ws?token={{accessToken}}`\n3. Conectar y esperar mensajes",
+      "item": [
+        {
+          "name": "WebSocket Connection (docs only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://{{baseUrl}}/api/v1/ws?token={{accessToken}}",
+              "protocol": "ws",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ws"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}"
+                }
+              ]
+            },
+            "description": "Este request es documentacion. Postman no soporta WebSocket dentro de una coleccion HTTP. Usa la pestana 'WebSocket' de Postman con la URL mostrada arriba."
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "console.log('Fleet Monitor API - Request iniciado');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "console.log('Fleet Monitor API - Request completado: ' + pm.response.code);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "URL base del backend"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "Access token JWT (se auto-completa despues del login)"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "Refresh token (se auto-completa despues del login)"
+    },
+    {
+      "key": "vehicleId",
+      "value": "",
+      "type": "string",
+      "description": "ID del primer vehiculo (se auto-completa despues de List Vehicles)"
+    }
+  ]
+}

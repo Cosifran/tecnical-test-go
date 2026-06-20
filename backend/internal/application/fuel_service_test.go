@@ -14,7 +14,7 @@ type mockSensorRepo struct {
 	err  error
 }
 
-func (m *mockSensorRepo) FindByVehicleID(ctx context.Context, vehicleID string, from, to time.Time, sensorType string) ([]domain.SensorData, error) {
+func (m *mockSensorRepo) FindByVehicleID(ctx context.Context, vehicleID string, from, to time.Time, sensorType string, limit int) ([]domain.SensorData, error) {
 	return m.data, m.err
 }
 
@@ -78,11 +78,14 @@ func TestCheckAutonomy_LessThanThreeReadings_NoAlert(t *testing.T) {
 	service := NewFuelService(sensorRepo, alertRepo)
 
 	// Act
-	err := service.CheckAutonomy(context.Background(), "vehicle-1", 10)
+	alert, err := service.CheckAutonomy(context.Background(), "vehicle-1", "DEV-001", 10)
 
 	// Assert
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
+	}
+	if alert != nil {
+		t.Errorf("expected nil alert, got %v", alert)
 	}
 	if len(alertRepo.created) != 0 {
 		t.Errorf("expected 0 alerts, got %d", len(alertRepo.created))
@@ -98,17 +101,19 @@ func TestCheckAutonomy_HighConsumption_TriggersAlert(t *testing.T) {
 	service := NewFuelService(sensorRepo, alertRepo)
 
 	// Act
-	err := service.CheckAutonomy(context.Background(), "vehicle-1", 10)
+	alert, err := service.CheckAutonomy(context.Background(), "vehicle-1", "DEV-001", 10)
 
 	// Assert
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
+	if alert == nil {
+		t.Fatal("expected alert, got nil")
+	}
 	if len(alertRepo.created) != 1 {
-		t.Fatalf("expected 1 alert, got %d", len(alertRepo.created))
+		t.Fatalf("expected 1 alert in repo, got %d", len(alertRepo.created))
 	}
 
-	alert := alertRepo.created[0]
 	if alert.Type != "low_fuel" {
 		t.Errorf("expected alert type 'low_fuel', got %s", alert.Type)
 	}
@@ -117,6 +122,9 @@ func TestCheckAutonomy_HighConsumption_TriggersAlert(t *testing.T) {
 	}
 	if alert.VehicleID != "vehicle-1" {
 		t.Errorf("expected vehicleID 'vehicle-1', got %s", alert.VehicleID)
+	}
+	if alert.DeviceID != "DEV-001" {
+		t.Errorf("expected deviceID 'DEV-001', got %s", alert.DeviceID)
 	}
 }
 
@@ -127,13 +135,16 @@ func TestCheckAutonomy_LowConsumption_NoAlert(t *testing.T) {
 	}
 	alertRepo := &mockAlertRepo{}
 	service := NewFuelService(sensorRepo, alertRepo)
-	
+
 	// Act
-	err := service.CheckAutonomy(context.Background(), "vehicle-1", 10)
-	
+	alert, err := service.CheckAutonomy(context.Background(), "vehicle-1", "DEV-001", 10)
+
 	// Assert
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
+	}
+	if alert != nil {
+		t.Errorf("expected nil alert, got %v", alert)
 	}
 	if len(alertRepo.created) != 0 {
 		t.Errorf("expected 0 alerts, got %d", len(alertRepo.created))
@@ -146,13 +157,16 @@ func TestCheckAutonomy_ZeroRate_NoAlert(t *testing.T) {
 	}
 	alertRepo := &mockAlertRepo{}
 	service := NewFuelService(sensorRepo, alertRepo)
-	
+
 	// Act
-	err := service.CheckAutonomy(context.Background(), "vehicle-1", 10)
-	
+	alert, err := service.CheckAutonomy(context.Background(), "vehicle-1", "DEV-001", 10)
+
 	// Assert
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
+	}
+	if alert != nil {
+		t.Errorf("expected nil alert, got %v", alert)
 	}
 	if len(alertRepo.created) != 0 {
 		t.Errorf("expected 0 alerts, got %d", len(alertRepo.created))
@@ -165,13 +179,16 @@ func TestCheckAutonomy_NegativeRate_NoAlert(t *testing.T) {
 	}
 	alertRepo := &mockAlertRepo{}
 	service := NewFuelService(sensorRepo, alertRepo)
-	
+
 	// Act
-	err := service.CheckAutonomy(context.Background(), "vehicle-1", 10)
-	
+	alert, err := service.CheckAutonomy(context.Background(), "vehicle-1", "DEV-001", 10)
+
 	// Assert
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
+	}
+	if alert != nil {
+		t.Errorf("expected nil alert, got %v", alert)
 	}
 	if len(alertRepo.created) != 0 {
 		t.Errorf("expected 0 alerts, got %d", len(alertRepo.created))
@@ -184,13 +201,16 @@ func TestCheckAutonomy_RepoError_ReturnsError(t *testing.T) {
 	}
 	alertRepo := &mockAlertRepo{}
 	service := NewFuelService(sensorRepo, alertRepo)
-	
+
 	// Act
-	err := service.CheckAutonomy(context.Background(), "vehicle-1", 10)
-	
+	alert, err := service.CheckAutonomy(context.Background(), "vehicle-1", "DEV-001", 10)
+
 	// Assert
 	if err == nil {
 		t.Error("expected error, got nil")
+	}
+	if alert != nil {
+		t.Errorf("expected nil alert on error, got %v", alert)
 	}
 	if len(alertRepo.created) != 0 {
 		t.Errorf("expected 0 alerts, got %d", len(alertRepo.created))

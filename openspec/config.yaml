@@ -1,11 +1,39 @@
 schema: spec-driven
 
+# sdd-init envelope — generated 2026-06-19 for project tecnical-test-go
+# Mode: hybrid (OpenSpec files + Engram observations, topic_key: sdd-init/tecnical-test-go)
+
 context: |
-  Tech stack: Go (backend), PostgreSQL/SQLite, WebSockets, manual JWT auth (HMAC+base64), REST API.
-  Testing: go test (standard), table-driven tests preferred.
-  Style: gofmt, go vet, golint if available.
-  Architecture: Clean/Hexagonal suggested for testability.
-  Critical logic: fuel autonomy calculation (<1hr alert), JWT manual validation.
+  Tech stack: Go 1.25 (backend), SQLite (mattn/go-sqlite3), WebSockets (gorilla/websocket), manual JWT auth (HMAC-SHA256 + base64, NO external JWT lib), REST API via net/http.
+  Testing: go test (stdlib), table-driven, pure stdlib assertions, httptest for HTTP layer.
+  Style: gofmt, go vet.
+  Architecture: Clean/Hexagonal (cmd/ + internal/{config,domain,application,infrastructure}).
+  Critical logic: fuel autonomy calculation (<1hr alert), JWT manual validation, device ID masking (DEV-****-XC54), RBAC.
+  Frontend: pending (empty /frontend/ dir), planned React/Next.js + Vitest.
+
+testing:
+  strict_tdd: true
+  resolved_by: "fallback — no marker/config override, test runner present"
+  backend:
+    runner: "go test ./..."
+    wrapper: "backend/scripts/test.sh"
+    style: "table-driven with t.Run(tt.name, ...)"
+    assertion_lib: "stdlib only (no testify)"
+    http_helper: "net/http/httptest"
+    coverage_tool: "go test -cover (available, not enforced)"
+    critical_tests:
+      - "internal/infrastructure/jwt/token_test.go (manual JWT sign/verify/tamper/expire)"
+      - "internal/application/auth_service_test.go (login/refresh, table-driven)"
+      - "internal/application/fuel_service_test.go (predictive <1h alert)"
+      - "internal/application/masking_test.go (DEV-****-XC54)"
+      - "internal/application/sensor_service_test.go"
+      - "internal/application/vehicle_service_test.go"
+      - "internal/infrastructure/http/middleware_test.go (auth/role)"
+      - "internal/infrastructure/websocket/websocket_test.go"
+  frontend:
+    runner: "pending — Vitest + Testing Library (or Jest) once scaffold lands"
+    style: "component tests + Playwright reserved for E2E"
+    status: "not detected"
 
 rules:
   proposal:

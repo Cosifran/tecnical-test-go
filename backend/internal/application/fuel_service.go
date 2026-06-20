@@ -22,73 +22,59 @@ func NewFuelService(sensorRepo domain.SensorDataRepository, alertRepo domain.Ale
 	}
 }
 
-func (fs *FuelService) CheckAutonomy(ctx context.Context, vehicleID string, readingsCount int) error {
-	// IMPLEMENTAR:
-	// 1. Llamar a sensorRepo.FindByVehicleID para obtener lecturas de tipo "fuel"
-	to := time.Time{}
-	from := time.Time{}
-
-	data, err := fs.sensorRepo.FindByVehicleID(ctx, vehicleID, from, to, "fuel")
-
+// CheckAutonomy calculates fuel consumption rate from historical sensor data
+// and returns an alert if the vehicle has less than 1 hour of autonomy remaining.
+func (fs *FuelService) CheckAutonomy(ctx context.Context, vehicleID string, deviceID string, readingsCount int) (*domain.Alert, error) {
+	data, err := fs.sensorRepo.FindByVehicleID(ctx, vehicleID, time.Time{}, time.Time{}, "fuel", readingsCount)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(data) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	// 2. Filtrar/ordenar por timestamp
 	sort.Slice(data, func(i, j int) bool {
-		// Esta función anonima retorna true si data[i] debe ir ANTES que data[j]
 		return data[i].Timestamp.Before(data[j].Timestamp)
 	})
 
-	// 3. Extraer los valores de combustible usando json.Unmarshal en FuelReading
 	readings := make([]domain.FuelReadingWithTime, 0, len(data))
-
 	for _, point := range data {
 		var fuel domain.FuelReading
 		if err := json.Unmarshal(point.Value, &fuel); err != nil {
 			continue
 		}
-
 		readings = append(readings, domain.FuelReadingWithTime{
 			Level:     fuel.Level,
 			Timestamp: point.Timestamp,
 		})
 	}
 
+	// At least 3 readings are needed for a meaningful consumption rate.
 	if len(readings) < 3 {
-		return nil
+		return nil, nil
 	}
 
-	// 4. Calcular la tasa y autonomía
 	oldest := readings[0]
 	newest := readings[len(readings)-1]
 
 	deltaLiters := oldest.Level - newest.Level
-
 	deltaTime := newest.Timestamp.Sub(oldest.Timestamp)
 	deltaHours := deltaTime.Hours()
 
 	rate := deltaLiters / deltaHours
 
-	// 5. Si autonomía < 1 hora, crear alerta con alertRepo.Create
-
 	if rate <= 0 || math.IsNaN(rate) || math.IsInf(rate, 0) {
-		return nil
+		return nil, nil
 	}
 
 	autonomy := newest.Level / rate
-
 	if math.IsNaN(autonomy) || math.IsInf(autonomy, 0) {
-		return nil
+		return nil, nil
 	}
 
-	// 6. Si autonomía < 1 hora, crear alerta con alertRepo.Create
 	if autonomy >= 1.0 {
-		return nil
+		return nil, nil
 	}
 
 	detailsMap := map[string]interface{}{
@@ -98,17 +84,21 @@ func (fs *FuelService) CheckAutonomy(ctx context.Context, vehicleID string, read
 	}
 
 	detailsJSON, err := json.Marshal(detailsMap)
-
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	alert := &domain.Alert{
 		VehicleID: vehicleID,
+		DeviceID:  deviceID,
 		Type:      "low_fuel",
 		Severity:  "critical",
 		Details:   detailsJSON,
 	}
 
-	return fs.alertRepo.Create(ctx, alert)
+	if err := fs.alertRepo.Create(ctx, alert); err != nil {
+		return nil, err
+	}
+
+	return alert, nil
 }
