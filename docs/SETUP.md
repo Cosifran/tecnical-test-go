@@ -139,10 +139,8 @@ Expected response:
 
 ```bash
 # Run all tests
-go test ./...
-
-# Run with verbose output
-go test -v ./...
+cd backend 
+./scripts/test.sh
 
 # Run a specific package
 go test -v ./internal/infrastructure/jwt/...
