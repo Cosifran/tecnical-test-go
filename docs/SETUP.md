@@ -11,7 +11,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Cosifran/tecnical-test-go
 cd prueba-tecnica/backend
 ```
 
